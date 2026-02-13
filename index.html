@@ -757,27 +757,58 @@
         }
 
         /* Inner page content - Right (Letter) */
-        .letter-scroll {
+        /* Letter scroll wrapper — holds content + custom scrollbar side by side */
+        .letter-scroll-wrapper {
             position: absolute;
             top: 25px;
             left: 20px;
-            right: 15px;
+            right: 8px;
             bottom: 25px;
-            overflow-y: auto;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+
+        .letter-scroll {
+            flex: 1;
+            overflow-y: scroll;
             overflow-x: hidden;
-            padding-right: 10px;
             -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;
             overscroll-behavior-y: contain;
             touch-action: pan-y;
-            z-index: 10;
-            /* Hide scrollbar but keep functionality */
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE/Edge */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
         .letter-scroll::-webkit-scrollbar {
-            display: none; /* Chrome/Safari */
+            display: none;
+        }
+
+        /* Custom scrollbar track */
+        .letter-scrollbar {
+            width: 4px;
+            flex-shrink: 0;
+            background: rgba(212, 175, 55, 0.15);
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* Scrollbar thumb */
+        .letter-scrollbar-thumb {
+            position: absolute;
+            width: 100%;
+            min-height: 30px;
+            background: linear-gradient(180deg, var(--gold) 0%, #B8962E 100%);
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .letter-scrollbar-thumb:active {
+            cursor: grabbing;
+            background: linear-gradient(180deg, #F0C840 0%, var(--gold) 100%);
         }
 
         .letter-greeting {
@@ -985,6 +1016,7 @@
                             <span class="corner-heart bl">♥</span>
                             <span class="corner-heart br">♥</span>
                             
+                            <div class="letter-scroll-wrapper">
                             <div class="letter-scroll">
                                 <div class="letter-greeting">My Dearest Fiza,</div>
                                 <div class="letter-body">
@@ -1002,6 +1034,10 @@
                                     With all my love, my life<br>
                                     Yours Hamesha ♥
                                 </div>
+                            </div>
+                            <div class="letter-scrollbar" id="letterScrollbar">
+                                <div class="letter-scrollbar-thumb" id="letterScrollbarThumb"></div>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -1182,24 +1218,106 @@
             e.stopPropagation();
         });
         
-        // Enable letter scrolling on touch devices
+        // Custom scrollbar logic
         const letterScroll = document.querySelector('.letter-scroll');
+        const scrollbar = document.getElementById('letterScrollbar');
+        const thumb = document.getElementById('letterScrollbarThumb');
         let touchInLetterScroll = false;
+
+        function updateThumb() {
+            if (!letterScroll || !thumb || !scrollbar) return;
+            const scrollRatio = letterScroll.scrollTop / (letterScroll.scrollHeight - letterScroll.clientHeight);
+            const trackHeight = scrollbar.clientHeight;
+            const thumbHeight = Math.max(30, (letterScroll.clientHeight / letterScroll.scrollHeight) * trackHeight);
+            const thumbTop = scrollRatio * (trackHeight - thumbHeight);
+            thumb.style.height = thumbHeight + 'px';
+            thumb.style.top = thumbTop + 'px';
+            // Hide scrollbar if content fits
+            scrollbar.style.opacity = letterScroll.scrollHeight > letterScroll.clientHeight + 2 ? '1' : '0';
+        }
+
         if (letterScroll) {
+            letterScroll.addEventListener('scroll', updateThumb, { passive: true });
+            // Update after fonts/images load
+            setTimeout(updateThumb, 500);
+
+            // Touch scrolling on the letter content itself
             letterScroll.addEventListener('touchstart', (e) => {
                 touchInLetterScroll = true;
                 e.stopPropagation();
             }, { passive: true });
-            
             letterScroll.addEventListener('touchmove', (e) => {
-                // Non-passive so we can stop propagation properly
                 e.stopPropagation();
             }, { passive: false });
-            
             letterScroll.addEventListener('touchend', (e) => {
                 touchInLetterScroll = false;
                 e.stopPropagation();
             }, { passive: true });
+        }
+
+        // Drag thumb with mouse
+        if (thumb && scrollbar && letterScroll) {
+            let isDragging = false;
+            let dragStartY = 0;
+            let dragStartScrollTop = 0;
+
+            function startDrag(clientY) {
+                isDragging = true;
+                dragStartY = clientY;
+                dragStartScrollTop = letterScroll.scrollTop;
+                document.body.style.userSelect = 'none';
+            }
+
+            function onDragMove(clientY) {
+                if (!isDragging) return;
+                const trackHeight = scrollbar.clientHeight;
+                const thumbHeight = thumb.clientHeight;
+                const delta = clientY - dragStartY;
+                const scrollRatio = delta / (trackHeight - thumbHeight);
+                letterScroll.scrollTop = dragStartScrollTop + scrollRatio * (letterScroll.scrollHeight - letterScroll.clientHeight);
+                updateThumb();
+            }
+
+            function endDrag() {
+                isDragging = false;
+                document.body.style.userSelect = '';
+            }
+
+            // Mouse drag
+            thumb.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startDrag(e.clientY);
+            });
+            document.addEventListener('mousemove', (e) => onDragMove(e.clientY));
+            document.addEventListener('mouseup', endDrag);
+
+            // Touch drag on thumb
+            thumb.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startDrag(e.touches[0].clientY);
+            }, { passive: false });
+            thumb.addEventListener('touchmove', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onDragMove(e.touches[0].clientY);
+            }, { passive: false });
+            thumb.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+                endDrag();
+            }, { passive: false });
+
+            // Tap on track to jump
+            scrollbar.addEventListener('click', (e) => {
+                if (e.target === thumb) return;
+                const rect = scrollbar.getBoundingClientRect();
+                const clickY = e.clientY - rect.top;
+                const trackHeight = scrollbar.clientHeight;
+                const thumbHeight = thumb.clientHeight;
+                const scrollRatio = (clickY - thumbHeight / 2) / (trackHeight - thumbHeight);
+                letterScroll.scrollTop = scrollRatio * (letterScroll.scrollHeight - letterScroll.clientHeight);
+                updateThumb();
+            });
         }
 
         // Flip card to back
