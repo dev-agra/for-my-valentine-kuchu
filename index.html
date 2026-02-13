@@ -768,6 +768,8 @@
             padding-right: 10px;
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: contain;
+            overscroll-behavior-y: contain;
+            touch-action: pan-y;
             z-index: 10;
             /* Hide scrollbar but keep functionality */
             scrollbar-width: none; /* Firefox */
@@ -1182,16 +1184,20 @@
         
         // Enable letter scrolling on touch devices
         const letterScroll = document.querySelector('.letter-scroll');
+        let touchInLetterScroll = false;
         if (letterScroll) {
             letterScroll.addEventListener('touchstart', (e) => {
+                touchInLetterScroll = true;
                 e.stopPropagation();
             }, { passive: true });
             
             letterScroll.addEventListener('touchmove', (e) => {
+                // Non-passive so we can stop propagation properly
                 e.stopPropagation();
-            }, { passive: true });
+            }, { passive: false });
             
             letterScroll.addEventListener('touchend', (e) => {
+                touchInLetterScroll = false;
                 e.stopPropagation();
             }, { passive: true });
         }
@@ -1257,7 +1263,7 @@
             }
 
             // Skip if touch started inside letter scroll (allow normal scrolling)
-            if (isInsideLetterScroll(touchStartTarget)) {
+            if (isInsideLetterScroll(touchStartTarget) || touchInLetterScroll) {
                 return;
             }
 
@@ -1280,6 +1286,13 @@
                 }
             }
         }, { passive: true });
+
+        // Prevent pull-to-refresh on document when book is open (but allow letter scroll)
+        document.addEventListener('touchmove', (e) => {
+            if (isBookOpen && !isInsideLetterScroll(e.target)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         // Remove mouse wheel flipping - let it scroll normally
 
