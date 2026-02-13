@@ -847,25 +847,25 @@
                     <div class="inner-left-page">
                         <div class="montage-content">
                             <div class="montage-image" data-phrase="Forever yours">
-                                <img src="images/image1.jpeg" alt="Our moment" style="object-position: center 20%;">
-                                <span class="image-phrase">Forever my christmas wish</span>
+                                <img src="images/image1.jpg" alt="Our moment">
+                                <span class="image-phrase">Forever yours</span>
                                 <span class="touch-hint-img">tap me</span>
                             </div>
                             <div class="montage-image" data-phrase="My everything">
-                                <img src="images/image2.jpeg" alt="Together" style="object-position: center 40%;">
-                                <span class="image-phrase">My Sukoon</span>
+                                <img src="images/image2.jpg" alt="Together">
+                                <span class="image-phrase">My everything</span>
                             </div>
                             <div class="montage-image" data-phrase="Always & forever">
-                                <img src="images/image3.jpeg" alt="Us" style="object-position: center 30%;">
-                                <span class="image-phrase">Always jumping partner</span>
+                                <img src="images/image3.jpg" alt="Us">
+                                <span class="image-phrase">Always & forever</span>
                             </div>
                             <div class="montage-image" data-phrase="You complete me">
-                                <img src="images/image4.jpeg" alt="Love">
+                                <img src="images/image4.jpg" alt="Love">
                                 <span class="image-phrase">You complete me</span>
                             </div>
                             <div class="montage-image" data-phrase="Soulmates">
-                                <img src="images/image5.jpeg" alt="Forever" style="object-position: center 35%;">
-                                <span class="image-phrase">My Valentine</span>
+                                <img src="images/image5.jpg" alt="Forever">
+                                <span class="image-phrase">Soulmates</span>
                             </div>
                         </div>
                     </div>
@@ -880,19 +880,19 @@
                             <div class="letter-scroll">
                                 <div class="letter-greeting">My Dearest Fiza,</div>
                                 <div class="letter-body">
-                                    <p>Jabse tum zindagi me aaye ho, mujhe har din ek naya khushi milta hai. Tumhara sath mere dil ko har din ek nayi zindagi deta hai.</p>
+                                    <p>From the moment you came into my life, everything changed. The ordinary became extraordinary, and every day became a gift worth treasuring.</p>
                                     
-                                    <p>Teri hasi mujhe suraj ki us roshni jaise chamkati hai jiski mujhe kabhi need nahi thi par aadat ho gayi hai teri mast is the greatest blessing I've ever known. Tere hathon me meine mera ghar paaya</p>
+                                    <p>Your smile is my sunrise, your laughter is my favorite melody, and your love is the greatest blessing I've ever known. In your eyes, I found my home.</p>
                                     
-                                    <p>You make me want to be better, dream better, and love deeper aur dress in style not like gareeb. With you, meine zindagi jeena sikha hai tere se darr ke meine tujhe pyaar karna sikha hai</p>
+                                    <p>You make me want to be better, dream bigger, and love deeper. With you, I've discovered what it truly means to be happy.</p>
                                     
-                                    <p>Thank you for being my partner, my best friend, my Kuchu, Buddu, Manguu and my everything. I promise to cherish you today, tomorrow, and for all the tomorrows after that.</p>
+                                    <p>Thank you for being my partner, my best friend, and my everything. I promise to cherish you today, tomorrow, and for all the tomorrows after that.</p>
                                     
-                                    <p>You are not just my Valentine, you are my forever my Life and my everything.</p>
+                                    <p>You are not just my Valentine—you are my forever.</p>
                                 </div>
                                 <div class="letter-signature">
-                                    With all my love, my life<br>
-                                    Yours Hamesha ♥
+                                    With all my love,<br>
+                                    Yours eternally ♥
                                 </div>
                             </div>
                         </div>
@@ -928,8 +928,8 @@
 
                     <!-- Flip hint (visible when open) -->
                     <div class="flip-hint" id="flipHint">
-                        <span>↻</span>
-                        <span>Swipe down to flip card</span>
+                        <span>←</span>
+                        <span>Swipe left to flip card</span>
                     </div>
                 </div>
             </div>
@@ -953,8 +953,8 @@
                 </div>
                 
                 <div class="flip-back-hint" id="flipBackHint">
-                    <span>↻</span>
-                    <span>Swipe up to return</span>
+                    <span>→</span>
+                    <span>Swipe right to return</span>
                 </div>
             </div>
         </div>
@@ -1055,41 +1055,69 @@
             cardFlipper.classList.remove('flipped-to-back');
         }
 
-        // Swipe detection for flipping
+        // Swipe detection for flipping (horizontal swipes only)
         let touchStartY = 0;
         let touchStartX = 0;
+        let touchStartTarget = null;
+        let isSwiping = false;
+
+        // Check if element is inside letter scroll area
+        function isInsideLetterScroll(element) {
+            return element.closest('.letter-scroll') !== null;
+        }
+
+        // Check if element is inside montage area
+        function isInsideMontage(element) {
+            return element.closest('.montage-image') !== null || element.closest('.montage-content') !== null;
+        }
 
         document.addEventListener('touchstart', (e) => {
             touchStartY = e.touches[0].clientY;
             touchStartX = e.touches[0].clientX;
-        });
+            touchStartTarget = e.target;
+            isSwiping = false;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            const diffX = Math.abs(e.touches[0].clientX - touchStartX);
+            const diffY = Math.abs(e.touches[0].clientY - touchStartY);
+            
+            // Mark as swiping if moved significantly
+            if (diffX > 10 || diffY > 10) {
+                isSwiping = true;
+            }
+        }, { passive: true });
 
         document.addEventListener('touchend', (e) => {
+            // Skip if touch started inside montage images
+            if (isInsideMontage(touchStartTarget)) {
+                return;
+            }
+
+            // Skip if touch started inside letter scroll (allow normal scrolling)
+            if (isInsideLetterScroll(touchStartTarget)) {
+                return;
+            }
+
             const touchEndY = e.changedTouches[0].clientY;
             const touchEndX = e.changedTouches[0].clientX;
-            const diffY = touchEndY - touchStartY;
-            const diffX = Math.abs(touchEndX - touchStartX);
+            const diffY = Math.abs(touchEndY - touchStartY);
+            const diffX = touchEndX - touchStartX;
             
-            // Vertical swipe (more vertical than horizontal)
-            if (Math.abs(diffY) > 80 && Math.abs(diffY) > diffX) {
-                if (diffY > 0 && isBookOpen && !isFlippedToBack) {
-                    // Swipe down - flip to back
+            // Only horizontal swipes (more horizontal than vertical) with enough distance
+            if (Math.abs(diffX) > 80 && Math.abs(diffX) > diffY * 1.5) {
+                if (diffX < 0 && isBookOpen && !isFlippedToBack) {
+                    // Swipe LEFT (right to left) → flip to back
                     flipToBack();
-                } else if (diffY < 0 && isFlippedToBack) {
-                    // Swipe up - flip to front
+                } else if (diffX > 0 && isFlippedToBack) {
+                    // Swipe RIGHT (left to right) → flip to front
                     flipToFront();
                 }
             }
-        });
+        }, { passive: true });
 
-        // Mouse wheel for desktop
-        document.addEventListener('wheel', (e) => {
-            if (e.deltaY > 50 && isBookOpen && !isFlippedToBack) {
-                flipToBack();
-            } else if (e.deltaY < -50 && isFlippedToBack) {
-                flipToFront();
-            }
-        });
+        // Disable mouse wheel flipping (let it scroll normally)
+        // Remove the wheel event listener
 
         // Click on back to flip (as fallback)
         document.querySelector('.card-back-side').addEventListener('click', (e) => {
@@ -1115,9 +1143,42 @@
             }, 800);
         });
 
-        // Montage image interactions
+        // Montage image interactions - completely isolated
         montageImages.forEach(img => {
+            let imgTouchStartX = 0;
+            let imgTouchStartY = 0;
+
+            img.addEventListener('touchstart', (e) => {
+                imgTouchStartX = e.touches[0].clientX;
+                imgTouchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            img.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+                
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                const diffX = Math.abs(touchEndX - imgTouchStartX);
+                const diffY = Math.abs(touchEndY - imgTouchStartY);
+                
+                // Only trigger animation if it was a tap (minimal movement)
+                if (diffX < 15 && diffY < 15) {
+                    img.classList.add('active');
+                    createSparkles(touchEndX, touchEndY, 3);
+                    
+                    setTimeout(() => {
+                        img.classList.remove('active');
+                    }, 2500);
+                }
+            });
+
             img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            
+            // Desktop click for animation
+            img.addEventListener('mouseup', (e) => {
                 e.stopPropagation();
                 img.classList.add('active');
                 createSparkles(e.clientX, e.clientY, 3);
